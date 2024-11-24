@@ -33,6 +33,7 @@ class Home extends Component{
 
     getSearchedDetails = async () => {
         const {searchWord} = this.state 
+        if(searchWord !== ""){
         try{
         const response = await axios.get("http://localhost:9000/notes/search/",{
             params: {q: searchWord}
@@ -42,17 +43,20 @@ class Home extends Component{
             notesList: response.data
         })
     }catch(e){
-        console.log("Error fetching in data")
+        alert("Error in finding")
     }
+}else{
+    alert("undefined Search")
+}
     }
 
     fetchUsers = async () => {
         try{
             const response = await axios.get("http://localhost:9000/notes/")
-            console.log(response.data)
+            
             this.setState({notesList: response.data})
         }catch(err){
-            console.log("Error fetching",err)
+            alert("Error in Fetching the data")
             
         }
     }
@@ -68,25 +72,35 @@ class Home extends Component{
             this.fetchUsers()
         
         }catch(err){
-                console.log("error in deleting user")
+                alert("Not able to delete the note")
         }
     }
 
     onUpdate = async (id) => {
         const{notesList} = this.state 
         const note = notesList.find((eachItem) => eachItem.id === id)
+        
         this.setState({
             title: note.title,
-            description: note.description
+            description: note.description,
+            category: note.category,
+            editedId: id
         })
-        }
+    }
+
+    
+
+    
 
     onSubmitNotes = async (event) => {
         event.preventDefault()
-        const {title,description,category} = this.state 
+        const {title,description,category,editedId} = this.state 
+        if(editedId == null){
+
         if(title !== "" && description !== ""){
+
             const newNote = {title,description,category}
-       
+
         try{
             await axios.post("http://localhost:9000/notes",newNote)
             this.fetchUsers()
@@ -94,10 +108,35 @@ class Home extends Component{
         }catch(err){
             console.log("Error in creating notes",err);
         }
-        }else{alert("Title and Description are Important")
+         }
+        else{alert("Title and Description are Important")
         }
-        
+        }
+        else{
+            if(title !=="" && description !== ""){
+                const updatedNote = {title,description,category}
+                try{
+                    const response = await axios.put(`http://localhost:9000/notes/${editedId}`,updatedNote)
+                    if(response.status === 200){
+                        alert("Note updated Successfully")
+                       
+                        this.setState({editedId: null, title: "", description:"",category:"Others"})
+                        this.fetchUsers()
+                    }
+                } catch(err){
+                    alert("Failed to update the note")
+                }
+            }else{
+                alert("Title and description are required for updated")
+            }
+            
+            
+           
+        }
     }
+
+        
+    
     
     onSelectCategory = (event) => {
         this.setState({category: event.target.value})
@@ -161,12 +200,13 @@ class Home extends Component{
                 {notesList.length === 0 ? (
                     <div className="empty-data-container">
                         <img src="https://res.cloudinary.com/diqwk5cdp/image/upload/v1732070791/Empty_Box_Illustration_1_dfkrvg.png" alt="empty" className="empty-data"/>
+                        <p className="no-data-found">No Data found</p>
                     </div>
                 ) : (
                     <ul>
                     {notesList.map((eachNotes) => (
                         <li key={eachNotes.id} className="card-container">
-                            <div className="category-icon-container">
+                        <div className="category-icon-container">
                             <CiHashtag />
                             <p className="category-box">{eachNotes.category}</p>
                             </div>
